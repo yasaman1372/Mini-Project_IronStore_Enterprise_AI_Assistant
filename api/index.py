@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Literal
@@ -91,8 +92,9 @@ def chat(req: ChatRequest):
             temperature=0,
             messages=[{"role": "system", "content": system}, {"role": "user", "content": req.question}],
         )
-    except Exception:
-        raise HTTPException(status_code=502, detail="The assistant could not answer right now.")
+    except Exception as e:
+        logging.exception("chat failed")
+        raise HTTPException(status_code=502, detail=f"The assistant could not answer right now ({type(e).__name__}).")
     return ChatResponse(answer=result.choices[0].message.content)
 
 
