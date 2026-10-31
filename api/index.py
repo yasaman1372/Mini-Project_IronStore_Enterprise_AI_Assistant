@@ -54,6 +54,11 @@ class ChatResponse(BaseModel):
     answer: str
 
 
+def clean_key(raw):
+    # Tolerate a pasted '.env' line such as OPENAI_API_KEY="sk-..."
+    return raw.split("=")[-1].strip().strip("\"'")
+
+
 def retrieve(client, question):
     q = client.embeddings.create(model=EMBEDDING_MODEL, input=question).data[0].embedding
     q = np.array(q, dtype=np.float32)
@@ -84,7 +89,7 @@ def health():
 @router.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     try:
-        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"].strip().strip("\"'"))
+        client = OpenAI(api_key=clean_key(os.environ["OPENAI_API_KEY"]))
         context = format_docs(retrieve(client, req.question))
         system = SYSTEM_PROMPT.format(history=format_history(req.history), context=context)
         result = client.chat.completions.create(
