@@ -84,7 +84,7 @@ def health():
 @router.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     try:
-        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"].strip().strip("\"'"))
         context = format_docs(retrieve(client, req.question))
         system = SYSTEM_PROMPT.format(history=format_history(req.history), context=context)
         result = client.chat.completions.create(
@@ -94,7 +94,7 @@ def chat(req: ChatRequest):
         )
     except Exception as e:
         logging.exception("chat failed")
-        raise HTTPException(status_code=502, detail=f"The assistant could not answer right now ({type(e).__name__}).")
+        raise HTTPException(status_code=502, detail=f"The assistant could not answer right now ({type(e).__name__}: {type(e.__cause__).__name__ if e.__cause__ else ''} {str(e.__cause__ or e)[:120]}).")
     return ChatResponse(answer=result.choices[0].message.content)
 
 
