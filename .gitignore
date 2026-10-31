@@ -1,0 +1,12 @@
+.venv/
+.env
+.env.*
+!.env.example
+chroma_db/
+__pycache__/
+.DS_Store
+node_modules/
+dist/
+.vercel/
+
+
