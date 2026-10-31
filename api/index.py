@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from pydantic import BaseModel, Field
@@ -33,6 +33,9 @@ app = FastAPI(title="IronStore Assistant API")
 # Only needed for local development (frontend on :5173); on Vercel both share one origin
 origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",") if o.strip()]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"])
+
+
+router = APIRouter()
 
 
 class Turn(BaseModel):
@@ -72,12 +75,12 @@ def format_history(history):
     )
 
 
-@app.get("/api/health")
+@router.get("/health")
 def health():
     return {"status": "ok", "chunks": len(CHUNKS)}
 
 
-@app.post("/api/chat", response_model=ChatResponse)
+@router.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     try:
         client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
@@ -91,3 +94,8 @@ def chat(req: ChatRequest):
     except Exception:
         raise HTTPException(status_code=502, detail="The assistant could not answer right now.")
     return ChatResponse(answer=result.choices[0].message.content)
+
+
+# Vercel may pass either the original path or the rewritten one, so accept both
+app.include_router(router, prefix="/api")
+app.include_router(router, prefix="/api/index")
