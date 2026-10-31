@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './index.css'
 
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8765').replace(/\/$/, '')
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
 const SUGGESTIONS = [
   'How long does a card refund usually take?',
@@ -37,7 +37,6 @@ export default function App() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [sessionId, setSessionId] = useState(() => localStorage.getItem('sessionId'))
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -51,15 +50,16 @@ export default function App() {
     setInput('')
     setLoading(true)
     try {
-      const res = await fetch(`${API_URL}/chat`, {
+      const res = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, session_id: sessionId }),
+        body: JSON.stringify({
+          question,
+          history: messages.filter((m) => !m.error).slice(-10).map((m) => ({ role: m.role, content: m.text })),
+        }),
       })
       if (!res.ok) throw new Error(`Request failed (${res.status})`)
       const data = await res.json()
-      setSessionId(data.session_id)
-      localStorage.setItem('sessionId', data.session_id)
       setMessages((m) => [...m, { role: 'assistant', text: data.answer }])
     } catch (err) {
       setMessages((m) => [...m, { role: 'assistant', text: `Sorry, something went wrong. ${err.message}`, error: true }])
@@ -69,11 +69,6 @@ export default function App() {
   }
 
   function newChat() {
-    if (sessionId) {
-      fetch(`${API_URL}/chat/${sessionId}`, { method: 'DELETE' }).catch(() => {})
-    }
-    localStorage.removeItem('sessionId')
-    setSessionId(null)
     setMessages([])
   }
 

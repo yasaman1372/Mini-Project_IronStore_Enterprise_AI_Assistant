@@ -1,0 +1,12 @@
+{
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
+  "rewrites": [{ "source": "/api/(.*)", "destination": "/api/index" }],
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "api/data/**",
+      "excludeFiles": "{frontend/**,documents/**,chroma_db/**,app/**,scripts/**,.venv/**,main.ipynb}",
+      "maxDuration": 30
+    }
+  }
+}
