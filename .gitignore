@@ -1,6 +1,7 @@
 .venv/
 .env
 .env.*
+.vscode
 !.env.example
 chroma_db/
 __pycache__/
@@ -8,5 +9,6 @@ __pycache__/
 node_modules/
 dist/
 .vercel/
-
+main.ipynb
+main.py
 

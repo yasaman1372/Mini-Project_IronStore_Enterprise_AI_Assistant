@@ -1,4 +1,0 @@
-{
-    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/langchain-v0.2/bin/python",
-    "python.terminal.activateEnvironment": true
-}
