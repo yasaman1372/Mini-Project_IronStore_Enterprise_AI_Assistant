@@ -9,6 +9,30 @@ const SUGGESTIONS = [
   'How far in advance must I request annual leave longer than five working days?',
 ]
 
+const CITATION = /[[(]\s*(?:Sources?:\s*)?([^[\]()]*?\.pdf[^[\]()]*)[\])]/gi
+const PART = /([\w.\- ]+?)\.pdf(?:\s*,?\s*p(?:ages?|\.)?\s*(\d+))?/gi
+
+function renderText(text) {
+  const out = []
+  let last = 0
+  for (const m of text.matchAll(CITATION)) {
+    out.push(text.slice(last, m.index).trimEnd())
+    out.push(
+      <span className="sources" key={m.index}>
+        {[...m[1].matchAll(PART)].map((p, i) => (
+          <span className="chip" key={i} title={`${p[1].trim()}.pdf`}>
+            📄 {p[1].trim().replace(/^IronStore_/, '').replace(/_/g, ' ')}
+            {p[2] && <b>p. {p[2]}</b>}
+          </span>
+        ))}
+      </span>,
+    )
+    last = m.index + m[0].length
+  }
+  out.push(text.slice(last))
+  return out
+}
+
 export default function App() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -56,13 +80,21 @@ export default function App() {
   return (
     <div className="app">
       <header>
-        <h1>IronStore Assistant</h1>
+        <div className="brand">
+          <div className="logo">IS</div>
+          <div>
+            <h1>IronStore Assistant</h1>
+            <span className="status"><i /> Online</span>
+          </div>
+        </div>
         <button onClick={newChat} disabled={loading || messages.length === 0}>New chat</button>
       </header>
 
       <main>
         {messages.length === 0 && (
           <div className="empty">
+            <div className="logo big">IS</div>
+            <h2>How can I help you today?</h2>
             <p>Ask about IronStore policies and products.</p>
             <div className="suggestions">
               {SUGGESTIONS.map((s) => (
@@ -72,9 +104,17 @@ export default function App() {
           </div>
         )}
         {messages.map((m, i) => (
-          <div key={i} className={`bubble ${m.role}${m.error ? ' error' : ''}`}>{m.text}</div>
+          <div key={i} className={`row ${m.role}`}>
+            {m.role === 'assistant' && <div className="avatar">IS</div>}
+            <div className={`bubble ${m.role}${m.error ? ' error' : ''}`}>{m.role === 'assistant' ? renderText(m.text) : m.text}</div>
+          </div>
         ))}
-        {loading && <div className="bubble assistant typing">Thinking…</div>}
+        {loading && (
+          <div className="row assistant">
+            <div className="avatar">IS</div>
+            <div className="bubble assistant dots"><span /><span /><span /></div>
+          </div>
+        )}
         <div ref={bottomRef} />
       </main>
 
@@ -86,7 +126,7 @@ export default function App() {
           maxLength={2000}
           autoFocus
         />
-        <button type="submit" disabled={loading || !input.trim()}>Send</button>
+        <button type="submit" disabled={loading || !input.trim()} aria-label="Send">➤</button>
       </form>
     </div>
   )
